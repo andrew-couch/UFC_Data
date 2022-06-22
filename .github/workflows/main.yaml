@@ -1,0 +1,39 @@
+# Hourly scraping
+name: Scrape
+
+# Controls when the action will run.
+on:
+  schedule:
+    - cron: "0 12 * * 0"
+
+jobs:
+  scrape:
+    # The type of runner that the job will run on
+    runs-on: macos-latest
+
+    # Load repo and install R
+    steps:
+    - uses: actions/checkout@master
+    - uses: r-lib/actions/setup-r@master
+
+    # Set-up R
+    - name: Install packages
+      run: |
+        R -e 'install.packages("tidyverse")'
+        R -e 'install.packages("rvest")'
+        
+    # Run R script
+    - name: Scrape
+      run: Rscript Scraper.R
+    
+    # Add new files in data folder, commit along with other modified files, push.
+    - name: Commit files
+      run: |
+        git config --local user.name github-actions
+        git config --local user.email "actions@github.com"
+        git add data/*
+        git commit -am "GH ACTION Autorun $(date)"
+        git push origin main
+      env:
+        REPO_KEY: ${{secrets.GITHUB_TOKEN}}
+        username: github-actions

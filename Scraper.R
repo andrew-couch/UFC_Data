@@ -218,7 +218,7 @@ scrape_moneyline <- function(fighter){
 }
 
 # Data Scraping -----------------------------------------------------------
-scraped_cards <- read_csv("fight_data_raw.csv")
+scraped_cards <- read_csv("Data/fight_data_raw.csv")
 
 UFC <- tibble(UFC_Page = "http://ufcstats.com/statistics/events/completed?page=all") %>% 
   # Scrape Fight Card links
@@ -232,22 +232,19 @@ UFC <- tibble(UFC_Page = "http://ufcstats.com/statistics/events/completed?page=a
 
 UFC_Data <- UFC %>% mutate(fight_data = map(fights, safely(scrape_fight_summary_data)))
 
-UFC_Data %>% 
+df <- UFC_Data %>% 
   unnest(fight_data) %>% 
   filter(row_number() %% 2 != 0) %>% 
   unnest(fight_data) %>% 
   mutate(round_finished = as.numeric(round_finished)) %>% 
   distinct() %>% 
-  bind_rows(scraped_cards %>% mutate(time = as.character(time))) %>% 
-  write_csv("fight_data_raw.csv")
+  bind_rows(scraped_cards %>% mutate(time = as.character(time))) 
+
+df %>% write_csv("Data/fight_data_raw.csv")
 
 
 # Data Cleaning -----------------------------------------------------------
 message("Cleaning Data")
-rm(list = ls())
-
-df <- read_csv("fight_data_raw.csv")
-
 # Clean head-to-head data
 df <- df %>% 
   # Deselect fields that will not be used in the model
@@ -358,9 +355,9 @@ fighter_2 <- df %>%
 # Combine fighter 1 and fighter 2 data 
 fight_data <- bind_rows(fighter_1, fighter_2) %>% arrange(desc(fight_pk))
 
-write_csv(fight_data,"fight_data.csv")
+write_csv(fight_data,"Data/fight_data.csv")
 
-moneyline_history <- read_csv("moneyline.csv")
+moneyline_history <- read_csv("Data/moneyline.csv")
 
 moneyline_df <- fight_data %>% 
   slice_max(date) %>% 

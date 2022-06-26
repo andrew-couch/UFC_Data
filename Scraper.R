@@ -359,6 +359,7 @@ write_csv(fight_data,"Data/fight_data.csv")
 
 moneyline_history <- read_csv("Data/moneyline.csv")
 
+message("Scraping Moneylines")
 moneyline_df <- fight_data %>% 
   slice_max(date) %>% 
   select(fighter) %>% 
@@ -375,4 +376,4 @@ bind_rows(
   moneyline_df,
 ) %>% 
   distinct() %>%
-  write_csv("moneyline.csv")
+  write_csv("Data/moneyline.csv")

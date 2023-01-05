@@ -1,0 +1,95 @@
+---
+title: "Untitled"
+author: "Andrew Couch"
+date: "2022-11-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(fuzzyjoin)
+
+df <- read_csv("UFC_Data/Data/fight_data.csv")
+moneyline <- read_csv("UFC_Data/Data/moneyline.csv")
+```
+
+
+```{r}
+fight_df <- df %>% 
+  group_by(fighter) %>% 
+  mutate(
+    across(
+      .cols = c(
+        kd, kds_received, 
+        sig_strike_attempts, sig_strike_landed, sig_strikes_avoided, sig_strikes_received,
+        strike_attempts, strike_landed, strikes_avoided, strikes_received, 
+        sub_attempts, td_attempts, td_landed, tds_defended, tds_received),
+      .fns = ~(lag(.x, n = 1, order_by = date) + lag(.x, n = 2, order_by = date) + lag(.x, n = 3, order_by = date)) / 3)
+  ) %>% 
+  ungroup() %>% 
+  select(fighter, fight_pk, res,
+         kd, kds_received, 
+         sig_strike_attempts, sig_strike_landed, sig_strikes_avoided, sig_strikes_received,
+         strike_attempts, strike_landed, strikes_avoided, strikes_received, 
+         sub_attempts, td_attempts, td_landed, tds_defended, tds_received)
+
+
+moneyline_df <- moneyline %>% 
+  filter(Card != "Future Events") %>% 
+  mutate(date = map(Card, .f = function(card){
+    x <- str_split(string = card, pattern = " ", n = Inf, simplify = TRUE)
+    len <- length(x)
+    start <- len - 2
+    x[start:len] %>% str_c(collapse = " ")
+  }),
+  Card = map(Card, .f = function(card){
+    x <- str_split(string = card, pattern = " ", n = Inf, simplify = TRUE)
+    len <- length(x)
+    end <- len - 3
+    x[1:end] %>% str_c(collapse = " ")
+  })) %>% 
+  unnest(Card, date) %>% 
+  mutate(across(c(fighter_a_odds, fighter_b_odds), .fns = ~str_replace(.x, "\\+", "") %>% str_squish() %>% as.numeric()),
+         date = as.Date(str_replace(date, "th", ""), "%b %d %Y"))
+```
+
+
+```{r}
+fight_df %>% 
+  filter(fight_pk == 6673) %>% 
+  mutate(type = rep(c("a", "b"))) %>% 
+  pivot_wider(names_from = type, values_from = -fight_pk) %>% 
+  select(-res_b) %>% 
+  select(fight_pk, fighter_a, fighter_b, res_a) %>% 
+  mutate(fight = paste0(fighter_a, " ", fighter_b)) %>% 
+  stringdist_inner_join(
+    moneyline_df %>% mutate(moneyline_fight = paste0(fighter_a, " ", fighter_b)),
+    by = c(fight = "moneyline_fight"),
+    max_dist = 2, distance_col = "distance"
+  )
+```
+
+
+```{r}
+library(qdapDictionaries)
+
+words <- tbl_df(DICTIONARY)
+data(misspellings)
+
+sub_misspellings <- misspellings %>%
+  sample_n(1000)
+
+joined <- sub_misspellings %>%
+  stringdist_inner_join(words, by = c(misspelling = "word"), max_dist = 1)
+```
+
+\
+```{r}
+
+```
+
+

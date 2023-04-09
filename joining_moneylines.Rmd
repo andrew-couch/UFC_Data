@@ -13,8 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(fuzzyjoin)
 
-df <- read_csv("UFC_Data/Data/fight_data.csv")
-moneyline <- read_csv("UFC_Data/Data/moneyline.csv")
+df <- read_csv("Data/fight_data.csv")
+moneyline <- read_csv("Data/moneyline.csv")
 ```
 
 
@@ -58,6 +58,8 @@ moneyline_df <- moneyline %>%
 ```
 
 
+
+
 ```{r}
 fight_df %>% 
   filter(fight_pk == 6673) %>% 
@@ -74,22 +76,95 @@ fight_df %>%
 ```
 
 
+
 ```{r}
-library(qdapDictionaries)
-
-words <- tbl_df(DICTIONARY)
-data(misspellings)
-
-sub_misspellings <- misspellings %>%
-  sample_n(1000)
-
-joined <- sub_misspellings %>%
-  stringdist_inner_join(words, by = c(misspelling = "word"), max_dist = 1)
+moneyline_component <- df %>% 
+  group_by(fight_pk) %>% 
+  mutate(type = rep(c("a", "b"))) %>% 
+  ungroup() %>% 
+  select(fighter, fight_pk, type) %>% 
+  pivot_wider(names_from = type, values_from = -fight_pk) %>% 
+  select(-type_a, -type_b) %>% 
+  mutate(fight = paste0(fighter_a, " ", fighter_b)) %>% 
+  stringdist_left_join(
+    moneyline_df %>% 
+      mutate(moneyline_fight = paste0(fighter_a, " ", fighter_b)) %>% 
+      select(moneyline_fight, ml_date = date, card = Card, 
+             ml_fighter_a = fighter_a, ml_fighter_b = fighter_b, 
+             fighter_a_ml = fighter_a_odds, fighter_b_ml = fighter_b_odds),
+    by = c(fight = "moneyline_fight"),
+    max_dist = 2, distance_col = "distance"
+  ) %>% 
+  left_join(df %>% distinct(fight_pk, date),
+            by = "fight_pk") %>% 
+  filter(ml_date == date | is.na(ml_date)) %>% 
+  select(fight_pk, fighter_a, fighter_b, fighter_a_ml, fighter_b_ml)
 ```
 
-\
+
 ```{r}
+fight_component <- df %>%
+  group_by(fighter) %>% 
+  mutate(
+    across(
+      .cols = c(
+        kd, kds_received, 
+        sig_strike_attempts, sig_strike_landed, sig_strikes_avoided, sig_strikes_received,
+        strike_attempts, strike_landed, strikes_avoided, strikes_received, 
+        sub_attempts, td_attempts, td_landed, tds_defended, tds_received),
+      .fns = ~lag(.x , n = 1, order_by = date), .names = "{.col}_lag1"),
+    across(
+      .cols = c(
+        kd, kds_received, 
+        sig_strike_attempts, sig_strike_landed, sig_strikes_avoided, sig_strikes_received,
+        strike_attempts, strike_landed, strikes_avoided, strikes_received, 
+        sub_attempts, td_attempts, td_landed, tds_defended, tds_received),
+      .fns = ~lag(.x , n = 2, order_by = date), .names = "{.col}_lag2"),
+    across(
+      .cols = c(
+        kd, kds_received, 
+        sig_strike_attempts, sig_strike_landed, sig_strikes_avoided, sig_strikes_received,
+        strike_attempts, strike_landed, strikes_avoided, strikes_received, 
+        sub_attempts, td_attempts, td_landed, tds_defended, tds_received),
+      .fns = ~lag(.x , n = 3, order_by = date), .names = "{.col}_lag3")
+  ) %>% 
+  ungroup() %>% 
+  select(-c(
+    kd, kds_received, 
+    sig_strike_attempts, sig_strike_landed, sig_strikes_avoided, sig_strikes_received,
+    strike_attempts, strike_landed, strikes_avoided, strikes_received, 
+    sub_attempts, td_attempts, td_landed, tds_defended, tds_received, rev, round_finished, rounds, pass)) %>% 
+  pivot_longer(cols = matches("[0-9]")) %>% 
+  separate(name, c("type", "lag_type"), sep = "_lag") %>% 
+  pivot_wider(names_from = lag_type, values_from = value) %>% 
+  mutate(value = case_when(
+    is.na(`1`) ~ 0,
+    is.na(`2`) ~ `1`,
+    is.na(`3`) ~ (`1` + `2`) / 2,
+    T ~ (`1` + `2` + `3`) / 3,
+  )) %>% 
+  select(-`1`, -`2`, -`3`) %>% 
+  pivot_wider(names_from = type, values_from = value) %>% 
+  select(fight_pk, res, fighter, 
+         kd, kds_received, 
+         sig_strike_attempts, sig_strike_landed, sig_strikes_avoided, sig_strikes_received,
+         strike_attempts, strike_landed, strikes_avoided, strikes_received, 
+         sub_attempts, td_attempts, td_landed, tds_defended, tds_received)
 
 ```
 
+
+```{r}
+model_df <- moneyline_component %>% 
+  left_join(fight_component %>% rename_with(~paste0(.x, "_a")), by = c("fight_pk" = "fight_pk_a", "fighter_a")) %>% 
+  left_join(fight_component %>% rename_with(~paste0(.x, "_b")), by = c("fight_pk" = "fight_pk_b", "fighter_b")) %>% 
+  select(-res_b) %>% 
+  select(fight_pk, res = res_a, everything()) %>% 
+  mutate(res = if_else(res == "W", 1, 0))
+```
+
+
+```{r}
+model_df
+```
 

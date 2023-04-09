@@ -383,3 +383,5 @@ if(nrow(UFC) != 0){
 } else {
   message("No new cards")
 }
+
+write_file(paste0("\n", Sys.time(), ": ", nrow(UFC), " fights scraped"), file = "logs.txt", append = TRUE)

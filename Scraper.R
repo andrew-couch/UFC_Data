@@ -360,26 +360,26 @@ if(nrow(UFC) != 0){
   
   write_csv(fight_data,"Data/fight_data.csv")
   
-  moneyline_history <- read_csv("Data/moneyline.csv")
-  
-  message("Scraping Moneylines")
-  moneyline_df <- fight_data %>% 
-    slice_max(date) %>% 
-    select(fighter) %>% 
-    distinct(fighter) %>% 
-    mutate(moneyline = map(fighter, safely(scrape_moneyline))) %>% 
-    select(moneyline) %>% 
-    mutate(moneyline = map(moneyline, ~pluck(.x, 1))) %>% 
-    unnest(moneyline) %>% 
-    unnest(hist) %>% 
-    select(-fighter)
-  
-  bind_rows(
-    moneyline_history,
-    moneyline_df,
-  ) %>% 
-    distinct() %>%
-    write_csv("Data/moneyline.csv")
+  # moneyline_history <- read_csv("Data/moneyline.csv")
+  # 
+  # message("Scraping Moneylines")
+  # moneyline_df <- fight_data %>% 
+  #   slice_max(date) %>% 
+  #   select(fighter) %>% 
+  #   distinct(fighter) %>% 
+  #   mutate(moneyline = map(fighter, safely(scrape_moneyline))) %>% 
+  #   select(moneyline) %>% 
+  #   mutate(moneyline = map(moneyline, ~pluck(.x, 1))) %>% 
+  #   unnest(moneyline) %>% 
+  #   unnest(hist) %>% 
+  #   select(-fighter)
+  # 
+  # bind_rows(
+  #   moneyline_history,
+  #   moneyline_df,
+  # ) %>% 
+  #   distinct() %>%
+  #   write_csv("Data/moneyline.csv")
 } else {
   message("No new cards")
 }

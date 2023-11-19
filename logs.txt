@@ -27,3 +27,4 @@
 2023-10-29 12:14:48: 0 fights scraped
 2023-11-05 12:14:28: 11 fights scraped
 2023-11-12 12:15:15: 14 fights scraped
+2023-11-19 12:20:48: 15 fights scraped

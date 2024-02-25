@@ -39,3 +39,4 @@
 2024-02-04 12:17:15: 14 fights scraped
 2024-02-11 12:15:59: 15 fights scraped
 2024-02-18 12:21:29: 12 fights scraped
+2024-02-25 12:16:56: 12 fights scraped

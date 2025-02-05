@@ -10,6 +10,7 @@ jobs:
   scrape:
     # The type of runner that the job will run on
     runs-on: macos-latest
+    run: brew install --cask xquartz
 
     # Load repo and install R
     steps:

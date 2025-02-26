@@ -10,8 +10,6 @@ jobs:
   scrape:
     # The type of runner that the job will run on
     runs-on: macos-latest
-    run: brew install --cask xquartz
-
     # Load repo and install R
     steps:
     - uses: actions/checkout@v2
@@ -22,9 +20,9 @@ jobs:
     # Set-up R
     - name: Install packages
       run: |
+        brew install --cask xquartz
         R -e 'install.packages("tidyverse")'
-        R -e 'install.packages("rvest")'
-        
+        R -e 'install.packages("rvest")'        
     # Run R script
     - name: Scrape
       run: Rscript Scraper.R

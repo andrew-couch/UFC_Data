@@ -9,20 +9,19 @@ on:
 jobs:
   scrape:
     # The type of runner that the job will run on
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     # Load repo and install R
     steps:
     - uses: actions/checkout@v2
     - uses: r-lib/actions/setup-r@v2
       with:
-        r-version: '4.2.1'
+        r-version: '4.4.2'
 
     # Set-up R
     - name: Install packages
       run: |
-        brew install --cask xquartz
-        R -e 'install.packages("tidyverse")'
-        R -e 'install.packages("rvest")'        
+        R -e 'install.packages("tidyverse", type="binary")'
+        R -e 'install.packages("rvest", type="binary")'        
     # Run R script
     - name: Scrape
       run: Rscript Scraper.R

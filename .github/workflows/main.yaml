@@ -20,8 +20,8 @@ jobs:
     # Set-up R
     - name: Install packages
       run: |
-        R -e 'install.packages("tidyverse", type="binary")'
-        R -e 'install.packages("rvest", type="binary")'        
+        R -e 'install.packages("tidyverse")'
+        R -e 'install.packages("rvest")'        
     # Run R script
     - name: Scrape
       run: Rscript Scraper.R

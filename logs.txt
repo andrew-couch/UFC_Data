@@ -86,3 +86,4 @@
 2025-01-05 12:19:28: 0 fights scraped
 2025-01-12 12:19:43: 14 fights scraped
 2025-05-14 15:42:48.136188: 182 fights scraped
+2025-05-14 16:03:35.301121: 0 fights scraped
